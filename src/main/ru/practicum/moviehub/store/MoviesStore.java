@@ -16,4 +16,9 @@ public class MoviesStore {
         nextId++;
         return movie;
     }
+
+    public void clear() {
+        movies.clear();
+        nextId = 1L;
+    }
 }

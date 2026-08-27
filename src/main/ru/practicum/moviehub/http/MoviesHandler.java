@@ -12,26 +12,35 @@ import ru.practicum.moviehub.store.MoviesStore;
 
 public class MoviesHandler extends BaseHttpHandler {
 
+    private final MoviesStore store;
+    private final Gson gson = new Gson();
+
+    public MoviesHandler(MoviesStore store) {
+        this.store = store;
+    }
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         String method = exchange.getRequestMethod();
         if (method.equalsIgnoreCase("GET")) {
-            List<Movie> allMovies = store.getAll();
-            String responseBody = gson.toJson(allMovies);
-            sendJson(exchange, 200, responseBody);
+            handleGet(exchange);
         } else if (method.equalsIgnoreCase("POST")) {
-            byte[] requestBytes = exchange.getRequestBody().readAllBytes();
-            String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
-            Movie movie = gson.fromJson(requestBody, Movie.class);
-            Movie createdMovie = store.add(movie);
-            String responseBody = gson.toJson(createdMovie);
-            sendJson(exchange, 201, responseBody);
+            handlePost(exchange);
         }
     }
 
-    private final MoviesStore store;
-    private final Gson gson = new Gson();
-    public MoviesHandler(MoviesStore store) {
-        this.store = store;
+    private void handleGet(HttpExchange exchange) throws IOException {
+        List<Movie> allMovies = store.getAll();
+        String responseBody = gson.toJson(allMovies);
+        sendJson(exchange, 200, responseBody);
+    }
+
+    private void handlePost(HttpExchange exchange) throws IOException {
+        byte[] requestBytes = exchange.getRequestBody().readAllBytes();
+        String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
+        Movie movie = gson.fromJson(requestBody, Movie.class);
+        Movie createdMovie = store.add(movie);
+        String responseBody = gson.toJson(createdMovie);
+        sendJson(exchange, 201, responseBody);
     }
 }

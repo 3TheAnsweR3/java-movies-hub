@@ -3,6 +3,7 @@ package ru.practicum.moviehub.store;
 import ru.practicum.moviehub.model.Movie;
 
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 public class MoviesStore {
@@ -20,5 +21,9 @@ public class MoviesStore {
     public void clear() {
         movies.clear();
         nextId = 1L;
+    }
+
+    public List<Movie> getAll() {
+        return List.copyOf(movies.values());
     }
 }

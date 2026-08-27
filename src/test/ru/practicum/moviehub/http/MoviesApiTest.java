@@ -1,5 +1,6 @@
 package ru.practicum.moviehub.http;
 
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import org.junit.jupiter.api.AfterAll;
@@ -7,6 +8,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 import java.net.URI;
@@ -98,5 +100,46 @@ public class MoviesApiTest {
                 "Созданному фильму должен быть присвоен ID");
         assertTrue(createdMovie.get("id").getAsLong() > 0,
                 "ID созданного фильма должен быть положительным");
+    }
+
+    @Test
+    @DisplayName("Должен возвращать массив сохранённых фильмов")
+    void getMovies_whenMoviesExist_returnsMoviesArray() throws Exception {
+        store.add(new Movie("Interstellar", 2014));
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(200, resp.statusCode(),
+                "GET /movies должен вернуть 200");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8",
+                contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+        JsonArray returnedMovies =
+                JsonParser.parseString(resp.body()).getAsJsonArray();
+        assertEquals(1, returnedMovies.size(),
+                "GET /movies должен вернуть один сохранённый фильм");
+        JsonObject returnedMovie =
+                returnedMovies.get(0).getAsJsonObject();
+
+        assertEquals(1L,
+                returnedMovie.get("id").getAsLong(),
+                "Сервер должен вернуть ID сохранённого фильма");
+
+        assertEquals("Interstellar",
+                returnedMovie.get("title").getAsString(),
+                "Сервер должен вернуть название сохранённого фильма");
+
+        assertEquals(2014,
+                returnedMovie.get("year").getAsInt(),
+                "Сервер должен вернуть год сохранённого фильма");
     }
 }

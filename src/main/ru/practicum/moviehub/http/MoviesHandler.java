@@ -40,10 +40,11 @@ public class MoviesHandler extends BaseHttpHandler {
         byte[] requestBytes = exchange.getRequestBody().readAllBytes();
         String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
         Movie movie = gson.fromJson(requestBody, Movie.class);
-        if (movie.getTitle() == null || movie.getTitle().isBlank()) {
-            ErrorResponse resp = new ErrorResponse("Ошибка валидации",
+        String title = movie.getTitle();
+        if (title == null || title.isBlank()) {
+            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
                     List.of("название не должно быть пустым"));
-            String responseBody = gson.toJson(resp);
+            String responseBody = gson.toJson(errorResponse);
             sendJson(exchange, 422, responseBody);
             return;
         }

@@ -5,6 +5,7 @@ import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.time.LocalDate;
 import java.util.List;
 
 import ru.practicum.moviehub.api.ErrorResponse;
@@ -47,6 +48,12 @@ public class MoviesHandler extends BaseHttpHandler {
         }
         if (title.length() > 100) {
             sendValidationError(exchange, "название не должно быть длиннее 100 символов");
+            return;
+        }
+        int year = movie.getYear();
+        int maxYear = LocalDate.now().getYear() + 1;
+        if (year < 1888 || year > maxYear) {
+            sendValidationError(exchange, "год должен быть между 1888 и " + maxYear);
             return;
         }
         Movie createdMovie = store.add(movie);

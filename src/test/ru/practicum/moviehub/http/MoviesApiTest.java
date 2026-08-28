@@ -307,4 +307,35 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Невалидный фильм не должен сохраняться");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 415 при неправильном Content-Type")
+    void postMovie_whenContentTypeIsNotJson_returnsUnsupportedMediaType() throws Exception {
+        String requestBody = "{\"title\": \"Interstellar\", \"year\": 2014}";
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .header("Content-Type", "text/plain")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(415, resp.statusCode(),
+                "POST /movies должен вернуть 415");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Неподдерживаемый Content-Type", error,
+                "Поле error должно описывать неправильный Content-Type");
+        assertTrue(store.getAll().isEmpty(),
+                "Невалидный фильм не должен сохраняться");
+    }
 }

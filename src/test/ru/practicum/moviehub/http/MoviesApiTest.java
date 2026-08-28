@@ -17,6 +17,7 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.charset.StandardCharsets;
 import java.time.Duration;
+import java.time.LocalDate;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -218,6 +219,90 @@ public class MoviesApiTest {
         String description = details.get(0).getAsString();
 
         assertEquals("название не должно быть длиннее 100 символов", description,
+                "Массив details должен содержать описание ошибки");
+        assertTrue(store.getAll().isEmpty(),
+                "Невалидный фильм не должен сохраняться");
+    }
+
+    @Test
+    @DisplayName("Должен возвращать ошибку валидации при слишком раннем годе фильма")
+    void postMovie_whenYearTooEarly_returnsValidationError() throws Exception {
+        int maxYear = LocalDate.now().getYear() + 1;
+        String requestBody = "{\"title\": \"Interstellar\", \"year\": 1887}";
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Ошибка валидации", error,
+                "Поле error должно содержать строку \"Ошибка валидации\"");
+
+        JsonArray details = errorResponse.get("details").getAsJsonArray();
+
+        assertEquals(1, details.size(),
+                "Массив содержит ровно одно описание ошибки");
+
+        String description = details.get(0).getAsString();
+
+        assertEquals("год должен быть между 1888 и " + maxYear, description,
+                "Массив details должен содержать описание ошибки");
+        assertTrue(store.getAll().isEmpty(),
+                "Невалидный фильм не должен сохраняться");
+    }
+
+    @Test
+    @DisplayName("Должен возвращать ошибку валидации при слишком позднем годе фильма")
+    void postMovie_whenYearTooLate_returnsValidationError() throws Exception {
+        int maxYear = LocalDate.now().getYear() + 1;
+        int invalidYear = maxYear + 1;
+
+        String requestBody = "{\"title\": \"Interstellar\", \"year\": " + invalidYear + "}";
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Ошибка валидации", error,
+                "Поле error должно содержать строку \"Ошибка валидации\"");
+
+        JsonArray details = errorResponse.get("details").getAsJsonArray();
+
+        assertEquals(1, details.size(),
+                "Массив содержит ровно одно описание ошибки");
+
+        String description = details.get(0).getAsString();
+
+        assertEquals("год должен быть между 1888 и " + maxYear, description,
                 "Массив details должен содержать описание ошибки");
         assertTrue(store.getAll().isEmpty(),
                 "Невалидный фильм не должен сохраняться");

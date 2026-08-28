@@ -13,6 +13,8 @@ import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
 public class MoviesHandler extends BaseHttpHandler {
+    private static final int MAX_TITLE_LENGTH = 100;
+    private static final int MIN_RELEASE_YEAR = 1888;
 
     private final MoviesStore store;
     private final Gson gson = new Gson();
@@ -43,17 +45,22 @@ public class MoviesHandler extends BaseHttpHandler {
         Movie movie = gson.fromJson(requestBody, Movie.class);
         String title = movie.getTitle();
         if (title == null || title.isBlank()) {
-            sendValidationError(exchange, "название не должно быть пустым");
+            sendValidationError(exchange,
+                    "название не должно быть пустым");
             return;
         }
-        if (title.length() > 100) {
-            sendValidationError(exchange, "название не должно быть длиннее 100 символов");
+        if (title.length() > MAX_TITLE_LENGTH) {
+            sendValidationError(exchange,
+                    "название не должно быть длиннее "
+                            + MAX_TITLE_LENGTH + " символов");
             return;
         }
         int year = movie.getYear();
         int maxYear = LocalDate.now().getYear() + 1;
-        if (year < 1888 || year > maxYear) {
-            sendValidationError(exchange, "год должен быть между 1888 и " + maxYear);
+        if (year < MIN_RELEASE_YEAR || year > maxYear) {
+            sendValidationError(exchange,
+                    "год должен быть между "
+                            + MIN_RELEASE_YEAR + " и " + maxYear);
             return;
         }
         Movie createdMovie = store.add(movie);

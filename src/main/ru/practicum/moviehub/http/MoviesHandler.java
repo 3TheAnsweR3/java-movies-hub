@@ -43,12 +43,12 @@ public class MoviesHandler extends BaseHttpHandler {
         String contentType = exchange.getRequestHeaders().getFirst("Content-Type");
         boolean isJsonContentType = contentType != null
                 && contentType.split(";", 2)[0]
-                .trim()
-                .equalsIgnoreCase("application/json");
+                        .trim()
+                        .equalsIgnoreCase("application/json");
         if (!isJsonContentType) {
-            ErrorResponse errorResponse = new ErrorResponse("Неподдерживаемый Content-Type");
-            String responseBody = gson.toJson(errorResponse);
-            sendJson(exchange, 415, responseBody);
+            ErrorResponse errorResponse =
+                    new ErrorResponse("Неподдерживаемый Content-Type");
+            sendError(exchange, 415, errorResponse);
             return;
         }
         byte[] requestBytes = exchange.getRequestBody().readAllBytes();
@@ -79,10 +79,16 @@ public class MoviesHandler extends BaseHttpHandler {
         sendJson(exchange, 201, responseBody);
     }
 
-    private void sendValidationError(HttpExchange exchange, String detail) throws IOException {
+    private void sendValidationError(HttpExchange exchange,
+                                     String detail) throws IOException {
         ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
                 List.of(detail));
+        sendError(exchange, 422, errorResponse);
+    }
+
+    private void sendError(HttpExchange exchange, int status,
+                           ErrorResponse errorResponse) throws IOException {
         String responseBody = gson.toJson(errorResponse);
-        sendJson(exchange, 422, responseBody);
+        sendJson(exchange, status, responseBody);
     }
 }

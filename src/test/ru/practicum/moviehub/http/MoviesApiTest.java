@@ -180,6 +180,46 @@ public class MoviesApiTest {
                 "Массив details должен содержать описание ошибки");
         assertTrue(store.getAll().isEmpty(),
                 "Невалидный фильм не должен сохраняться");
+    }
 
+    @Test
+    @DisplayName("Должен возвращать ошибку валидации при слишком длинном названии фильма")
+    void postMovie_whenTitleTooLong_returnsValidationError() throws Exception {
+        String longTitle = "a".repeat(101);
+        String requestBody = "{\"title\": \"" + longTitle + "\", \"year\": 2014}";
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Ошибка валидации", error,
+                "Поле error должно содержать строку \"Ошибка валидации\"");
+
+        JsonArray details = errorResponse.get("details").getAsJsonArray();
+
+        assertEquals(1, details.size(),
+                "Массив содержит ровно одно описание ошибки");
+
+        String description = details.get(0).getAsString();
+
+        assertEquals("название не должно быть длиннее 100 символов", description,
+                "Массив details должен содержать описание ошибки");
+        assertTrue(store.getAll().isEmpty(),
+                "Невалидный фильм не должен сохраняться");
     }
 }

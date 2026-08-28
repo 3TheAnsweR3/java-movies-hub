@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 
+import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
 import ru.practicum.moviehub.store.MoviesStore;
 
@@ -39,6 +40,13 @@ public class MoviesHandler extends BaseHttpHandler {
         byte[] requestBytes = exchange.getRequestBody().readAllBytes();
         String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
         Movie movie = gson.fromJson(requestBody, Movie.class);
+        if (movie.getTitle() == null || movie.getTitle().isBlank()) {
+            ErrorResponse resp = new ErrorResponse("Ошибка валидации",
+                    List.of("название не должно быть пустым"));
+            String responseBody = gson.toJson(resp);
+            sendJson(exchange, 422, responseBody);
+            return;
+        }
         Movie createdMovie = store.add(movie);
         String responseBody = gson.toJson(createdMovie);
         sendJson(exchange, 201, responseBody);

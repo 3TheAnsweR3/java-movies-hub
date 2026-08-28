@@ -42,22 +42,22 @@ public class MoviesHandler extends BaseHttpHandler {
         Movie movie = gson.fromJson(requestBody, Movie.class);
         String title = movie.getTitle();
         if (title == null || title.isBlank()) {
-            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
-                    List.of("название не должно быть пустым"));
-            String responseBody = gson.toJson(errorResponse);
-            sendJson(exchange, 422, responseBody);
+            sendValidationError(exchange, "название не должно быть пустым");
             return;
         }
-
         if (title.length() > 100) {
-            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
-                    List.of("название не должно быть длиннее 100 символов"));
-            String responseBody = gson.toJson(errorResponse);
-            sendJson(exchange, 422, responseBody);
+            sendValidationError(exchange, "название не должно быть длиннее 100 символов");
             return;
         }
         Movie createdMovie = store.add(movie);
         String responseBody = gson.toJson(createdMovie);
         sendJson(exchange, 201, responseBody);
+    }
+
+    private void sendValidationError(HttpExchange exchange, String detail) throws IOException {
+        ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
+                List.of(detail));
+        String responseBody = gson.toJson(errorResponse);
+        sendJson(exchange, 422, responseBody);
     }
 }

@@ -48,6 +48,14 @@ public class MoviesHandler extends BaseHttpHandler {
             sendJson(exchange, 422, responseBody);
             return;
         }
+
+        if (title.length() > 100) {
+            ErrorResponse errorResponse = new ErrorResponse("Ошибка валидации",
+                    List.of("название не должно быть длиннее 100 символов"));
+            String responseBody = gson.toJson(errorResponse);
+            sendJson(exchange, 422, responseBody);
+            return;
+        }
         Movie createdMovie = store.add(movie);
         String responseBody = gson.toJson(createdMovie);
         sendJson(exchange, 201, responseBody);

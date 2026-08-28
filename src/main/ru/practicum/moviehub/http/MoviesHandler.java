@@ -40,6 +40,17 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {
+        String contentType = exchange.getRequestHeaders().getFirst("Content-Type");
+        boolean isJsonContentType = contentType != null
+                && contentType.split(";", 2)[0]
+                .trim()
+                .equalsIgnoreCase("application/json");
+        if (!isJsonContentType) {
+            ErrorResponse errorResponse = new ErrorResponse("Неподдерживаемый Content-Type");
+            String responseBody = gson.toJson(errorResponse);
+            sendJson(exchange, 415, responseBody);
+            return;
+        }
         byte[] requestBytes = exchange.getRequestBody().readAllBytes();
         String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
         Movie movie = gson.fromJson(requestBody, Movie.class);

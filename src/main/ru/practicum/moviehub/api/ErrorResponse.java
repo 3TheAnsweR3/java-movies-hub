@@ -10,4 +10,8 @@ public class ErrorResponse {
         this.error = error;
         this.details = details;
     }
+
+    public ErrorResponse(String error) {
+        this(error, null);
+    }
 }

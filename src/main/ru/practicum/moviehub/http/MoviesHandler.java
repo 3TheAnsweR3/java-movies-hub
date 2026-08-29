@@ -138,7 +138,12 @@ public class MoviesHandler extends BaseHttpHandler {
         String path = exchange.getRequestURI().getPath();
         String[] pathParts = path.split("/");
         long id = Long.parseLong(pathParts[2]);
-        store.delete(id);
+        boolean deleted = store.delete(id);
+        if (!deleted) {
+            ErrorResponse errorResponse = new ErrorResponse("Фильм не найден");
+            sendError(exchange, 404, errorResponse);
+            return;
+        }
         sendNoContent(exchange);
     }
 }

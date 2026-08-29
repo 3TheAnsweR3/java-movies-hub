@@ -137,7 +137,14 @@ public class MoviesHandler extends BaseHttpHandler {
     private void handleDelete(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
         String[] pathParts = path.split("/");
-        long id = Long.parseLong(pathParts[2]);
+        long id;
+        try {
+            id = Long.parseLong(pathParts[2]);
+        } catch (NumberFormatException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Некорректный ID");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
         boolean deleted = store.delete(id);
         if (!deleted) {
             ErrorResponse errorResponse = new ErrorResponse("Фильм не найден");

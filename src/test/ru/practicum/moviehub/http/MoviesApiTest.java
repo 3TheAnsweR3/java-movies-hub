@@ -554,4 +554,46 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Хранилище должно оставаться пустым");
     }
+
+    @Test
+    @DisplayName("Должен возвращать фильмы указанного года")
+    void getMovies_whenYearSpecified_returnsMoviesOfThatYear() throws Exception {
+        store.add(new Movie("Interstellar", 2014));
+        store.add(new Movie("The Matrix", 1999));
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies?year=2014"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(200, resp.statusCode(),
+                "GET /movies?year=2014 должен вернуть 200");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8",
+                contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+        JsonArray returnedMovies =
+                JsonParser.parseString(resp.body()).getAsJsonArray();
+        assertEquals(1, returnedMovies.size(),
+                "GET /movies?year=2014 должен вернуть один фильм");
+        JsonObject returnedMovie =
+                returnedMovies.get(0).getAsJsonObject();
+
+        assertEquals("Interstellar",
+                returnedMovie.get("title").getAsString(),
+                "Сервер должен вернуть название сохранённого фильма");
+
+        assertEquals(2014,
+                returnedMovie.get("year").getAsInt(),
+                "Сервер должен вернуть год сохранённого фильма");
+
+        assertEquals(2, store.getAll().size(),
+                "Фильтрация не должна изменять хранилище");
+    }
 }

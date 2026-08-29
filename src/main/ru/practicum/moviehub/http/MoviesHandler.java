@@ -71,13 +71,11 @@ public class MoviesHandler extends BaseHttpHandler {
         try {
             movie = gson.fromJson(requestBody, Movie.class);
         } catch (JsonParseException e) {
-            ErrorResponse errorResponse = new ErrorResponse("Некорректный JSON");
-            sendError(exchange, 400, errorResponse);
+            sendMalformedJsonError(exchange);
             return;
         }
         if (movie == null) {
-            ErrorResponse errorResponse = new ErrorResponse("Некорректный JSON");
-            sendError(exchange, 400, errorResponse);
+            sendMalformedJsonError(exchange);
             return;
         }
         String title = movie.getTitle();
@@ -116,6 +114,11 @@ public class MoviesHandler extends BaseHttpHandler {
                            ErrorResponse errorResponse) throws IOException {
         String responseBody = gson.toJson(errorResponse);
         sendJson(exchange, status, responseBody);
+    }
+
+    private void sendMalformedJsonError(HttpExchange exchange) throws IOException {
+        ErrorResponse errorResponse = new ErrorResponse("Некорректный JSON");
+        sendError(exchange, 400, errorResponse);
     }
 
     private void sendInvalidYearQueryError(HttpExchange exchange) throws IOException {

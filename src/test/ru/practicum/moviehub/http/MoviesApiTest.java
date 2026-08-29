@@ -752,4 +752,36 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Некорректный параметр не должен изменять хранилище");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 400 при пустом теле запроса")
+    void postMovie_whenBodyEmpty_returnsBadRequest() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .timeout(Duration.ofSeconds(2))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString("", StandardCharsets.UTF_8))
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(400, resp.statusCode(),
+                "POST /movies должен вернуть 400");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Некорректный JSON", error,
+                "Поле error должно сообщать о некорректном JSON");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Запрос с пустым телом не должен изменять хранилище");
+    }
 }

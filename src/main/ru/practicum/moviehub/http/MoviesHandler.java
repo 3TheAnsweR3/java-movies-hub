@@ -39,7 +39,10 @@ public class MoviesHandler extends BaseHttpHandler {
 
     private void handleGet(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        if (path.equals("/movies")) {
+        String query = exchange.getRequestURI().getQuery();
+        if (path.equals("/movies") && query != null) {
+            handleGetByYear(exchange, query);
+        } else if (path.equals("/movies")) {
             handleGetAll(exchange);
         } else {
             handleGetById(exchange, path);
@@ -157,5 +160,14 @@ public class MoviesHandler extends BaseHttpHandler {
             sendError(exchange, 400, errorResponse);
             return Optional.empty();
         }
+    }
+
+    private void handleGetByYear(HttpExchange exchange,
+                                 String query) throws IOException {
+        String[] queryParts = query.split("=");
+        int year = Integer.parseInt(queryParts[1]);
+        List<Movie> moviesByYear = store.getByYear(year);
+        String responseBody = gson.toJson(moviesByYear);
+        sendJson(exchange, 200, responseBody);
     }
 }

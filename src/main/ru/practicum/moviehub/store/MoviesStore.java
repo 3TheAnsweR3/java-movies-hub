@@ -35,4 +35,11 @@ public class MoviesStore {
     public boolean delete(long id) {
         return movies.remove(id) != null;
     }
+
+    public List<Movie> getByYear(int year) {
+        return movies.values()
+                .stream()
+                .filter(movie -> movie.getYear() == year)
+                .toList();
+    }
 }

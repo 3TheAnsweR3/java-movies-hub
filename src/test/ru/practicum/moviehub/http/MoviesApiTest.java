@@ -468,4 +468,29 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Хранилище должно оставаться пустым");
     }
+
+    @Test
+    @DisplayName("Должен удалять существующий фильм и возвращать 204")
+    void deleteMovie_whenExists_removesMovieAndReturnsNoContent() throws Exception {
+        store.add(new Movie("Interstellar", 2014));
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/1"))
+                .timeout(Duration.ofSeconds(2))
+                .DELETE()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(204, resp.statusCode(),
+                "DELETE /movies/1 должен вернуть 204");
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+        assertTrue(resp.body().isBlank(),
+                "Ответ 204 не должен содержать тело");
+        assertTrue(store.getAll().isEmpty(),
+                "Фильм должен быть удалён из хранилища");
+    }
 }

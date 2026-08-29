@@ -168,7 +168,15 @@ public class MoviesHandler extends BaseHttpHandler {
 
     private void handleGetByYear(HttpExchange exchange,
                                  String query) throws IOException {
-        String[] queryParts = query.split("=");
+        String[] queryParts = query.split("=", 2);
+        if (queryParts.length != 2
+                || !queryParts[0].equals("year")
+                || queryParts[1].isBlank()) {
+            ErrorResponse errorResponse =
+                    new ErrorResponse("Некорректный параметр запроса — 'year'");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
         int year;
         try {
             year = Integer.parseInt(queryParts[1]);

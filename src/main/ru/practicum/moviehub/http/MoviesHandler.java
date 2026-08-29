@@ -114,15 +114,11 @@ public class MoviesHandler extends BaseHttpHandler {
 
     private void handleGetById(HttpExchange exchange,
                                String path) throws IOException {
-        String[] pathParts = path.split("/");
-        long id;
-        try {
-            id = Long.parseLong(pathParts[2]);
-        } catch (NumberFormatException e) {
-            ErrorResponse errorResponse = new ErrorResponse("Некорректный ID");
-            sendError(exchange, 400, errorResponse);
+        Optional<Long> idOptional = parseIdOrSendError(exchange, path);
+        if (idOptional.isEmpty()) {
             return;
         }
+        long id = idOptional.get();
         Optional<Movie> movieOptional = store.getById(id);
         if (movieOptional.isEmpty()) {
             ErrorResponse errorResponse = new ErrorResponse("Фильм не найден");
@@ -136,15 +132,11 @@ public class MoviesHandler extends BaseHttpHandler {
 
     private void handleDelete(HttpExchange exchange) throws IOException {
         String path = exchange.getRequestURI().getPath();
-        String[] pathParts = path.split("/");
-        long id;
-        try {
-            id = Long.parseLong(pathParts[2]);
-        } catch (NumberFormatException e) {
-            ErrorResponse errorResponse = new ErrorResponse("Некорректный ID");
-            sendError(exchange, 400, errorResponse);
+        Optional<Long> idOptional = parseIdOrSendError(exchange, path);
+        if (idOptional.isEmpty()) {
             return;
         }
+        long id = idOptional.get();
         boolean deleted = store.delete(id);
         if (!deleted) {
             ErrorResponse errorResponse = new ErrorResponse("Фильм не найден");
@@ -152,5 +144,18 @@ public class MoviesHandler extends BaseHttpHandler {
             return;
         }
         sendNoContent(exchange);
+    }
+
+    private Optional<Long> parseIdOrSendError(HttpExchange exchange,
+                                              String path) throws IOException {
+        String[] pathParts = path.split("/");
+        try {
+            long id = Long.parseLong(pathParts[2]);
+            return Optional.of(id);
+        } catch (NumberFormatException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Некорректный ID");
+            sendError(exchange, 400, errorResponse);
+            return Optional.empty();
+        }
     }
 }

@@ -658,4 +658,36 @@ public class MoviesApiTest {
         assertEquals(1, store.getAll().size(),
                 "Фильтрация не должна изменять хранилище");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 405 при неподдерживаемом HTTP-методе")
+    void request_whenMethodUnsupported_returnsMethodNotAllowed() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .timeout(Duration.ofSeconds(2))
+                .method("PUT", HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(405, resp.statusCode(),
+                "Неподдерживаемый HTTP-метод должен вернуть 405");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8",
+                contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse =
+                JsonParser.parseString(resp.body()).getAsJsonObject();
+
+        assertTrue(errorResponse.has("error"),
+                "Ответ с ошибкой должен содержать поле error");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Неподдерживаемый метод не должен изменять хранилище");
+    }
 }

@@ -75,6 +75,11 @@ public class MoviesHandler extends BaseHttpHandler {
             sendError(exchange, 400, errorResponse);
             return;
         }
+        if (movie == null) {
+            ErrorResponse errorResponse = new ErrorResponse("Некорректный JSON");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
         String title = movie.getTitle();
         if (title == null || title.isBlank()) {
             sendValidationError(exchange,

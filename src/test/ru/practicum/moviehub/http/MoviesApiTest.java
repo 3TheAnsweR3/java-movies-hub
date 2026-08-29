@@ -408,4 +408,64 @@ public class MoviesApiTest {
                 returnedMovie.get("year").getAsInt(),
                 "Сервер должен вернуть год сохранённого фильма");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 404, если фильм не найден")
+    void getMovieById_whenMissing_returnsNotFound() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/999"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(404, resp.statusCode(),
+                "GET /movies/999 должен вернуть 404");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Фильм не найден", error,
+                "Поле error должно сообщать, что фильм не найден");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Хранилище должно оставаться пустым");
+    }
+
+    @Test
+    @DisplayName("Должен возвращать 400, если ID не является числом")
+    void getMovieById_whenIdIsNotNumber_returnsBadRequest() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/abc"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(400, resp.statusCode(),
+                "GET /movies/abc должен вернуть 400");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Некорректный ID", error,
+                "Поле error должно сообщать о некорректном ID");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Хранилище должно оставаться пустым");
+    }
 }

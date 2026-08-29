@@ -5,6 +5,7 @@ import ru.practicum.moviehub.model.Movie;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 public class MoviesStore {
     private final Map<Long, Movie> movies = new HashMap<>();
@@ -25,5 +26,9 @@ public class MoviesStore {
 
     public List<Movie> getAll() {
         return List.copyOf(movies.values());
+    }
+
+    public Optional<Movie> getById(long id) {
+        return Optional.ofNullable(movies.get(id));
     }
 }

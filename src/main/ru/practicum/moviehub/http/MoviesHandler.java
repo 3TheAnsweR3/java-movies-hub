@@ -35,9 +35,18 @@ public class MoviesHandler extends BaseHttpHandler {
     }
 
     private void handleGet(HttpExchange exchange) throws IOException {
-        List<Movie> allMovies = store.getAll();
-        String responseBody = gson.toJson(allMovies);
-        sendJson(exchange, 200, responseBody);
+        String path = exchange.getRequestURI().getPath();
+        if (path.equals("/movies")) {
+            List<Movie> allMovies = store.getAll();
+            String responseBody = gson.toJson(allMovies);
+            sendJson(exchange, 200, responseBody);
+        } else {
+            String[] pathParts = path.split("/");
+            long id = Long.parseLong(pathParts[2]);
+            Movie movie = store.getById(id).orElseThrow();
+            String responseBody = gson.toJson(movie);
+            sendJson(exchange, 200, responseBody);
+        }
     }
 
     private void handlePost(HttpExchange exchange) throws IOException {

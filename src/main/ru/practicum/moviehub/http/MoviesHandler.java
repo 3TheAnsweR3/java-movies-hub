@@ -165,7 +165,15 @@ public class MoviesHandler extends BaseHttpHandler {
     private void handleGetByYear(HttpExchange exchange,
                                  String query) throws IOException {
         String[] queryParts = query.split("=");
-        int year = Integer.parseInt(queryParts[1]);
+        int year;
+        try {
+            year = Integer.parseInt(queryParts[1]);
+        } catch (NumberFormatException e) {
+            ErrorResponse errorResponse =
+                    new ErrorResponse("Некорректный параметр запроса — 'year'");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
         List<Movie> moviesByYear = store.getByYear(year);
         String responseBody = gson.toJson(moviesByYear);
         sendJson(exchange, 200, responseBody);

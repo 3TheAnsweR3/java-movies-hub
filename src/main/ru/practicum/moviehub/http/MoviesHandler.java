@@ -113,6 +113,12 @@ public class MoviesHandler extends BaseHttpHandler {
         sendJson(exchange, status, responseBody);
     }
 
+    private void sendInvalidYearQueryError(HttpExchange exchange) throws IOException {
+        ErrorResponse errorResponse =
+                new ErrorResponse("Некорректный параметр запроса — 'year'");
+        sendError(exchange, 400, errorResponse);
+    }
+
     private void handleGetAll(HttpExchange exchange) throws IOException {
         List<Movie> allMovies = store.getAll();
         String responseBody = gson.toJson(allMovies);
@@ -172,18 +178,14 @@ public class MoviesHandler extends BaseHttpHandler {
         if (queryParts.length != 2
                 || !queryParts[0].equals("year")
                 || queryParts[1].isBlank()) {
-            ErrorResponse errorResponse =
-                    new ErrorResponse("Некорректный параметр запроса — 'year'");
-            sendError(exchange, 400, errorResponse);
+            sendInvalidYearQueryError(exchange);
             return;
         }
         int year;
         try {
             year = Integer.parseInt(queryParts[1]);
         } catch (NumberFormatException e) {
-            ErrorResponse errorResponse =
-                    new ErrorResponse("Некорректный параметр запроса — 'year'");
-            sendError(exchange, 400, errorResponse);
+            sendInvalidYearQueryError(exchange);
             return;
         }
         List<Movie> moviesByYear = store.getByYear(year);

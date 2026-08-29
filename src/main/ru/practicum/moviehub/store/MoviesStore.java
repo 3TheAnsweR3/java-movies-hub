@@ -31,4 +31,8 @@ public class MoviesStore {
     public Optional<Movie> getById(long id) {
         return Optional.ofNullable(movies.get(id));
     }
+
+    public boolean delete(long id) {
+        return movies.remove(id) != null;
+    }
 }

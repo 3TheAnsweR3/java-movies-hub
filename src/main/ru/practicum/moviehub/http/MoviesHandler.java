@@ -32,6 +32,8 @@ public class MoviesHandler extends BaseHttpHandler {
             handleGet(exchange);
         } else if (method.equalsIgnoreCase("POST")) {
             handlePost(exchange);
+        } else if (method.equalsIgnoreCase("DELETE")) {
+            handleDelete(exchange);
         }
     }
 
@@ -130,5 +132,13 @@ public class MoviesHandler extends BaseHttpHandler {
         Movie movie = movieOptional.get();
         String responseBody = gson.toJson(movie);
         sendJson(exchange, 200, responseBody);
+    }
+
+    private void handleDelete(HttpExchange exchange) throws IOException {
+        String path = exchange.getRequestURI().getPath();
+        String[] pathParts = path.split("/");
+        long id = Long.parseLong(pathParts[2]);
+        store.delete(id);
+        sendNoContent(exchange);
     }
 }

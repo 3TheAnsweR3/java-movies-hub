@@ -8,6 +8,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Optional;
 
 import ru.practicum.moviehub.api.ErrorResponse;
 import ru.practicum.moviehub.model.Movie;
@@ -112,8 +113,21 @@ public class MoviesHandler extends BaseHttpHandler {
     private void handleGetById(HttpExchange exchange,
                                String path) throws IOException {
         String[] pathParts = path.split("/");
-        long id = Long.parseLong(pathParts[2]);
-        Movie movie = store.getById(id).orElseThrow();
+        long id;
+        try {
+            id = Long.parseLong(pathParts[2]);
+        } catch (NumberFormatException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Некорректный ID");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
+        Optional<Movie> movieOptional = store.getById(id);
+        if (movieOptional.isEmpty()) {
+            ErrorResponse errorResponse = new ErrorResponse("Фильм не найден");
+            sendError(exchange, 404, errorResponse);
+            return;
+        }
+        Movie movie = movieOptional.get();
         String responseBody = gson.toJson(movie);
         sendJson(exchange, 200, responseBody);
     }

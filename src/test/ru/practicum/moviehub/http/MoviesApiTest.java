@@ -370,4 +370,42 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Фильм из некорректного JSON не должен сохраняться");
     }
+
+    @Test
+    @DisplayName("Должен возвращать фильм по существующему ID")
+    void getMovieById_whenExists_returnsMovie() throws Exception {
+        store.add(new Movie("Interstellar", 2014));
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/1"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(200, resp.statusCode(),
+                "GET /movies/1 должен вернуть 200");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8",
+                contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject returnedMovie =
+                JsonParser.parseString(resp.body()).getAsJsonObject();
+
+        assertEquals(1L,
+                returnedMovie.get("id").getAsLong(),
+                "Сервер должен вернуть ID сохранённого фильма");
+
+        assertEquals("Interstellar",
+                returnedMovie.get("title").getAsString(),
+                "Сервер должен вернуть название сохранённого фильма");
+
+        assertEquals(2014,
+                returnedMovie.get("year").getAsInt(),
+                "Сервер должен вернуть год сохранённого фильма");
+    }
 }

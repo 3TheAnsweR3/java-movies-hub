@@ -338,4 +338,36 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Невалидный фильм не должен сохраняться");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 400 при некорректном JSON")
+    void postMovie_whenJsonMalformed_returnsBadRequest() throws Exception {
+        String requestBody =
+                "{\"title\": \"Interstellar\", \"year\": }";
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies"))
+                .header("Content-Type", "application/json")
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(400, resp.statusCode(),
+                "POST /movies должен вернуть 400");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Некорректный JSON", error,
+                "Поле error должно описывать некорректный JSON");
+        assertTrue(store.getAll().isEmpty(),
+                "Фильм из некорректного JSON не должен сохраняться");
+    }
 }

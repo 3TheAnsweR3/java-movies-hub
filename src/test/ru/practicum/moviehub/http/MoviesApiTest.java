@@ -596,4 +596,35 @@ public class MoviesApiTest {
         assertEquals(2, store.getAll().size(),
                 "Фильтрация не должна изменять хранилище");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 400, если параметр year не является числом")
+    void getMovies_whenYearIsNotNumber_returnsBadRequest() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies?year=abc"))
+                .timeout(Duration.ofSeconds(2))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(400, resp.statusCode(),
+                "GET /movies?year=abc должен вернуть 400");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Некорректный параметр запроса — 'year'", error,
+                "Поле error должно сообщать о некорректном параметре year");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Некорректный параметр не должен изменять хранилище");
+    }
 }

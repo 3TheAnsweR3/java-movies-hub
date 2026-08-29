@@ -1,6 +1,7 @@
 package ru.practicum.moviehub.http;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
 import com.sun.net.httpserver.HttpExchange;
 
 import java.io.IOException;
@@ -53,7 +54,14 @@ public class MoviesHandler extends BaseHttpHandler {
         }
         byte[] requestBytes = exchange.getRequestBody().readAllBytes();
         String requestBody = new String(requestBytes, StandardCharsets.UTF_8);
-        Movie movie = gson.fromJson(requestBody, Movie.class);
+        Movie movie;
+        try {
+            movie = gson.fromJson(requestBody, Movie.class);
+        } catch (JsonParseException e) {
+            ErrorResponse errorResponse = new ErrorResponse("Некорректный JSON");
+            sendError(exchange, 400, errorResponse);
+            return;
+        }
         String title = movie.getTitle();
         if (title == null || title.isBlank()) {
             sendValidationError(exchange,

@@ -627,4 +627,35 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Некорректный параметр не должен изменять хранилище");
     }
+
+    @Test
+    @DisplayName("Должен возвращать пустой массив, если фильмов указанного года нет")
+    void getMovies_whenNoMoviesForYear_returnsEmptyArray() throws Exception {
+        store.add(new Movie("Interstellar", 2014));
+
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies?year=1999"))
+                .GET()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(200, resp.statusCode(),
+                "GET /movies?year=1999 должен вернуть 200");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8",
+                contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonArray returnedMovies =
+                JsonParser.parseString(resp.body()).getAsJsonArray();
+        assertEquals(0, returnedMovies.size(),
+                "Сервер должен вернуть пустой массив");
+        assertEquals(1, store.getAll().size(),
+                "Фильтрация не должна изменять хранилище");
+    }
 }

@@ -493,4 +493,34 @@ public class MoviesApiTest {
         assertTrue(store.getAll().isEmpty(),
                 "Фильм должен быть удалён из хранилища");
     }
+
+    @Test
+    @DisplayName("Должен возвращать 404 при удалении отсутствующего фильма")
+    void deleteMovie_whenMissing_returnsNotFound() throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + "/movies/999"))
+                .DELETE()
+                .build();
+
+        HttpResponse<String> resp =
+                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+
+        assertEquals(404, resp.statusCode(),
+                "DELETE /movies/999 должен вернуть 404");
+
+        String contentTypeHeaderValue =
+                resp.headers().firstValue("Content-Type").orElse("");
+
+        assertEquals("application/json; charset=UTF-8", contentTypeHeaderValue,
+                "Content-Type должен содержать формат данных и кодировку");
+
+        JsonObject errorResponse = JsonParser.parseString(resp.body()).getAsJsonObject();
+        String error = errorResponse.get("error").getAsString();
+
+        assertEquals("Фильм не найден", error,
+                "Поле error должно сообщать, что фильм не найден");
+
+        assertTrue(store.getAll().isEmpty(),
+                "Хранилище должно оставаться пустым");
+    }
 }

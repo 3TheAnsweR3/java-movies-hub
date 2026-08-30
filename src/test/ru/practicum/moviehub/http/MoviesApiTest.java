@@ -52,13 +52,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать пустой JSON-массив, если фильмы отсутствуют")
     void getMovies_whenEmpty_returnsEmptyArray() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies");
 
         assertEquals(200, resp.statusCode(), "GET /movies должен вернуть 200");
 
@@ -75,13 +69,9 @@ public class MoviesApiTest {
     @DisplayName("Должен создавать фильм и возвращать его с присвоенным ID")
     void postMovie_whenValid_returnsCreatedMovie() throws Exception {
         String requestBody = "{\"title\": \"Interstellar\", \"year\": 2014}";
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
+
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(201, resp.statusCode(), "POST /movies должен вернуть 201");
 
@@ -107,13 +97,8 @@ public class MoviesApiTest {
     @DisplayName("Должен возвращать массив сохранённых фильмов")
     void getMovies_whenMoviesExist_returnsMoviesArray() throws Exception {
         store.add(new Movie("Interstellar", 2014));
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .GET()
-                .build();
 
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies");
 
         assertEquals(200, resp.statusCode(),
                 "GET /movies должен вернуть 200");
@@ -148,14 +133,9 @@ public class MoviesApiTest {
     @DisplayName("Должен возвращать ошибку валидации при пустом названии фильма")
     void postMovie_whenTitleEmpty_returnsValidationError() throws Exception {
         String requestBody = "{\"title\": \"\", \"year\": 2014}";
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
 
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
 
@@ -189,14 +169,8 @@ public class MoviesApiTest {
         String longTitle = "a".repeat(101);
         String requestBody = "{\"title\": \"" + longTitle + "\", \"year\": 2014}";
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
 
@@ -230,14 +204,8 @@ public class MoviesApiTest {
         int maxYear = LocalDate.now().getYear() + 1;
         String requestBody = "{\"title\": \"Interstellar\", \"year\": 1887}";
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
 
@@ -273,14 +241,8 @@ public class MoviesApiTest {
 
         String requestBody = "{\"title\": \"Interstellar\", \"year\": " + invalidYear + "}";
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
-
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(422, resp.statusCode(), "POST /movies должен вернуть 422");
 
@@ -312,13 +274,9 @@ public class MoviesApiTest {
     @DisplayName("Должен возвращать 415 при неправильном Content-Type")
     void postMovie_whenContentTypeIsNotJson_returnsUnsupportedMediaType() throws Exception {
         String requestBody = "{\"title\": \"Interstellar\", \"year\": 2014}";
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "text/plain")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
+
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "text/plain");
 
         assertEquals(415, resp.statusCode(),
                 "POST /movies должен вернуть 415");
@@ -342,15 +300,10 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400 при некорректном JSON")
     void postMovie_whenJsonMalformed_returnsBadRequest() throws Exception {
-        String requestBody =
-                "{\"title\": \"Interstellar\", \"year\": }";
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
-                .build();
+        String requestBody = "{\"title\": \"Interstellar\", \"year\": }";
+
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", requestBody, "application/json");
 
         assertEquals(400, resp.statusCode(),
                 "POST /movies должен вернуть 400");
@@ -375,13 +328,8 @@ public class MoviesApiTest {
     @DisplayName("Должен возвращать фильм по существующему ID")
     void getMovieById_whenExists_returnsMovie() throws Exception {
         store.add(new Movie("Interstellar", 2014));
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/1"))
-                .GET()
-                .build();
 
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies/1");
 
         assertEquals(200, resp.statusCode(),
                 "GET /movies/1 должен вернуть 200");
@@ -412,13 +360,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 404, если фильм не найден")
     void getMovieById_whenMissing_returnsNotFound() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/999"))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies/999");
 
         assertEquals(404, resp.statusCode(),
                 "GET /movies/999 должен вернуть 404");
@@ -442,13 +384,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400, если ID не является числом")
     void getMovieById_whenIdIsNotNumber_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/abc"))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies/abc");
 
         assertEquals(400, resp.statusCode(),
                 "GET /movies/abc должен вернуть 400");
@@ -473,14 +409,8 @@ public class MoviesApiTest {
     @DisplayName("Должен удалять существующий фильм и возвращать 204")
     void deleteMovie_whenExists_removesMovieAndReturnsNoContent() throws Exception {
         store.add(new Movie("Interstellar", 2014));
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/1"))
-                .timeout(Duration.ofSeconds(2))
-                .DELETE()
-                .build();
 
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendDeleteRequest("/movies/1");
 
         assertEquals(204, resp.statusCode(),
                 "DELETE /movies/1 должен вернуть 204");
@@ -497,13 +427,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 404 при удалении отсутствующего фильма")
     void deleteMovie_whenMissing_returnsNotFound() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/999"))
-                .DELETE()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendDeleteRequest("/movies/999");
 
         assertEquals(404, resp.statusCode(),
                 "DELETE /movies/999 должен вернуть 404");
@@ -527,14 +451,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400 при удалении фильма с некорректным ID")
     void deleteMovie_whenIdIsNotNumber_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies/abc"))
-                .timeout(Duration.ofSeconds(2))
-                .DELETE()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendDeleteRequest("/movies/abc");
 
         assertEquals(400, resp.statusCode(),
                 "DELETE /movies/abc должен вернуть 400");
@@ -561,13 +478,7 @@ public class MoviesApiTest {
         store.add(new Movie("Interstellar", 2014));
         store.add(new Movie("The Matrix", 1999));
 
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies?year=2014"))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies?year=2014");
 
         assertEquals(200, resp.statusCode(),
                 "GET /movies?year=2014 должен вернуть 200");
@@ -600,14 +511,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400, если параметр year не является числом")
     void getMovies_whenYearIsNotNumber_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies?year=abc"))
-                .timeout(Duration.ofSeconds(2))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies?year=abc");
 
         assertEquals(400, resp.statusCode(),
                 "GET /movies?year=abc должен вернуть 400");
@@ -632,14 +536,7 @@ public class MoviesApiTest {
     @DisplayName("Должен возвращать пустой массив, если фильмов указанного года нет")
     void getMovies_whenNoMoviesForYear_returnsEmptyArray() throws Exception {
         store.add(new Movie("Interstellar", 2014));
-
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies?year=1999"))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies?year=1999");
 
         assertEquals(200, resp.statusCode(),
                 "GET /movies?year=1999 должен вернуть 200");
@@ -662,14 +559,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 405 при неподдерживаемом HTTP-методе")
     void request_whenMethodUnsupported_returnsMethodNotAllowed() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .timeout(Duration.ofSeconds(2))
-                .method("PUT", HttpRequest.BodyPublishers.noBody())
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendPutRequest("/movies");
 
         assertEquals(405, resp.statusCode(),
                 "Неподдерживаемый HTTP-метод должен вернуть 405");
@@ -694,14 +584,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400, если указан параметр не year")
     void getMovies_whenQueryParameterIsNotYear_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies?genre=2014"))
-                .timeout(Duration.ofSeconds(2))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies?genre=2014");
 
         assertEquals(400, resp.statusCode(),
                 "GET /movies?genre=2014 должен вернуть 400");
@@ -725,14 +608,7 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400, если значение year отсутствует")
     void getMovies_whenYearIsEmpty_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies?year="))
-                .timeout(Duration.ofSeconds(2))
-                .GET()
-                .build();
-
-        HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+        HttpResponse<String> resp = sendGetRequest("/movies?year=");
 
         assertEquals(400, resp.statusCode(),
                 "GET /movies?year= должен вернуть 400");
@@ -756,15 +632,8 @@ public class MoviesApiTest {
     @Test
     @DisplayName("Должен возвращать 400 при пустом теле запроса")
     void postMovie_whenBodyEmpty_returnsBadRequest() throws Exception {
-        HttpRequest req = HttpRequest.newBuilder()
-                .uri(URI.create(BASE + "/movies"))
-                .timeout(Duration.ofSeconds(2))
-                .header("Content-Type", "application/json")
-                .POST(HttpRequest.BodyPublishers.ofString("", StandardCharsets.UTF_8))
-                .build();
-
         HttpResponse<String> resp =
-                client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                sendPostRequest("/movies", "", "application/json");
 
         assertEquals(400, resp.statusCode(),
                 "POST /movies должен вернуть 400");
@@ -783,5 +652,48 @@ public class MoviesApiTest {
 
         assertTrue(store.getAll().isEmpty(),
                 "Запрос с пустым телом не должен изменять хранилище");
+    }
+
+    private HttpResponse<String> sendGetRequest(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + path))
+                .GET()
+                .build();
+
+        return client.send(req,
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private HttpResponse<String> sendPostRequest(String path,
+                                                 String requestBody,
+                                                 String contentType) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + path))
+                .header("Content-Type", contentType)
+                .POST(HttpRequest.BodyPublishers.ofString(requestBody, StandardCharsets.UTF_8))
+                .build();
+
+        return client.send(req,
+                HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private HttpResponse<String> sendDeleteRequest(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + path))
+                .timeout(Duration.ofSeconds(2))
+                .DELETE()
+                .build();
+
+        return client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+    }
+
+    private HttpResponse<String> sendPutRequest(String path) throws Exception {
+        HttpRequest req = HttpRequest.newBuilder()
+                .uri(URI.create(BASE + path))
+                .timeout(Duration.ofSeconds(2))
+                .method("PUT", HttpRequest.BodyPublishers.noBody())
+                .build();
+
+        return client.send(req, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
     }
 }
